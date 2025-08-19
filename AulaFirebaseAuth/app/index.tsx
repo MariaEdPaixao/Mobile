@@ -47,6 +47,7 @@ export default function LoginScreen() {
       const errorCode = error.code
       const errorMessage = error.message
       console.log("Erro: ", errorMessage);
+      Alert.alert("Erro!", "Credenciais inválidas, tente novamente")
     })
   };
 
