@@ -1,17 +1,23 @@
-import { StyleSheet, Text, Button, Alert, TextInput } from "react-native";
+import { StyleSheet, Text, Button, Alert, TextInput, ActivityIndicator, FlatList, KeyboardAvoidingView, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-
-import { auth } from "../services/FirebaseConfig";
 import { deleteUser } from "firebase/auth";
 import ItemLoja from "../components/ItemLoja";
-import { useState } from "react";
-import { collection, addDoc, db } from "../services/FirebaseConfig";
+import { useEffect, useState } from "react";
+
+import { auth, collection, addDoc, db, getDocs } from "../services/FirebaseConfig";
 
 export default function HomeScreen() {
   const router = useRouter(); // hook de navegação entre telas
   const [title, setTitle] = useState("");
+  interface Item {
+    id: String;
+    title: String;
+    isChecked: boolean;
+  }
+
+  const [listaItems, setListaItems] = useState<Item[]>([])
 
   const realizarLogoff = async () => {
     await AsyncStorage.removeItem("@user");
@@ -67,27 +73,68 @@ export default function HomeScreen() {
     }
   };
 
+  const buscarItems = async () => {
+    try {
+      const querySnapshot = await getDocs(collection(db, 'items'))
+      const items: any[] = []
+      querySnapshot.forEach((item) => {
+        items.push
+          ({
+            ...item.data(),
+            id: item.id
+          })
+      })
+      setListaItems(items) // Atualiza o estado com as informações do array
+    } catch (erro) {
+      console.log("Erro ao buscar os dados", erro)
+    }
+  }
+
+  useEffect(() => {
+    buscarItems()
+  }, [])
   return (
     <SafeAreaView style={styles.container}>
-      <Text>Seja bem-vindo a Tela inicial da aplicação</Text>
-      <Button title="Sair da conta" onPress={realizarLogoff} />
-      <Button title="Excluir conta" color="red" onPress={excluirConta} />
-      <Button
-        title="Alterar a senha"
-        onPress={() => {
-          router.push("/AlterarSenha");
-        }}
-      />
-      <ItemLoja />
-      <ItemLoja />
-      <ItemLoja />
-      <TextInput
-        placeholder="Digite o nome do produto"
-        style={styles.input}
-        value={title}
-        onChangeText={(value) => setTitle(value)}
-        onSubmitEditing={salvarItem} //quando clica no enter do celular ele chama a função
-      />
+      <KeyboardAvoidingView // é um componente que ajusta automaticamente o layout
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}//No ios é utilizado padding, e o android height
+        keyboardVerticalOffset={20} // Descola o conteúdo na vertical em 20 pixels
+
+      >
+        <Text>Seja bem-vindo a Tela inicial da aplicação</Text>
+        <Button title="Sair da conta" onPress={realizarLogoff} />
+        <Button title="Excluir conta" color="red" onPress={excluirConta} />
+        <Button
+          title="Alterar a senha"
+          onPress={() => {
+            router.push("/AlterarSenha");
+          }}
+        />
+
+        {listaItems.length <= 0 ? (
+          <ActivityIndicator />
+        ) : (
+          <FlatList
+            data={listaItems}
+            renderItem={({ item }) => (
+              <ItemLoja 
+                title={item.title} 
+                isChecked={item.isChecked}
+                id={item.id}
+              />
+            )}
+          />
+        )}
+
+        <TextInput
+          placeholder="Digite o nome do produto"
+          style={styles.input}
+          value={title}
+          onChangeText={(value) => setTitle(value)}
+          onSubmitEditing={salvarItem} //quando clica no enter do celular ele chama a função
+        />
+      </KeyboardAvoidingView>
+
     </SafeAreaView>
   );
 }

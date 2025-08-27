@@ -1,22 +1,62 @@
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
-import { Pressable, StyleSheet, View, Text } from "react-native";
+import { useEffect, useState } from "react";
+import { Pressable, StyleSheet, View, Text, Alert } from "react-native";
+import { doc, updateDoc, deleteDoc, db } from '../services/FirebaseConfig'
 
-export default function ItemLoja(){
-    return(
+
+export default function ItemLoja(props: any) {
+    const [isChecked, setIsChecked] = useState(props.isChecked)
+
+    const updateIsChecked = async () => {
+        const itemRef = doc(db, 'items', props.id)
+        await updateDoc(itemRef, {
+            isChecked: isChecked
+        })
+    }
+    const deletarItem = async () => {
+        try {
+            Alert.alert("Exclusão", "Deseja realmente excluir? ", [
+                {
+                    text: 'Cancelar', style: "cancel"
+                },
+                {
+                    text: "Sim",
+                    style: 'destructive',
+                    onPress: async () => (
+                        await deleteDoc(doc(db, 'items', props.id)),
+                        Alert.alert("Exclusão efetuada", "Produto excluído com sucesso!")
+                    )
+                }
+            ])
+        } catch (erro) {
+            Alert.alert("Erro", "Erro ao excluir" + erro)
+        }
+    }
+
+    useEffect(() => {
+        updateIsChecked()
+    }, [isChecked])
+
+    return (
         <View style={styles.container}>
-            <Pressable>
-                <AntDesign name="checkcircleo" color='black' size={24}/>
+            <Pressable onPress={() => { setIsChecked(!isChecked) }}>
+                {
+                    isChecked ?
+                        <AntDesign name="checkcircle" color='black' size={24} />
+                        :
+                        <AntDesign name="checkcircleo" color='black' size={24} />
+                }
             </Pressable>
-            <Text style={styles.title}> Mouse Gamer</Text>
-            <Pressable>
-                <MaterialIcons name="delete" size={24} color='black'/>
+            <Text style={styles.title}> {props.title}</Text>
+            <Pressable onPress={deletarItem}>
+                <MaterialIcons name="delete" size={24} color='black' />
             </Pressable>
         </View>
     )
 }
 
 const styles = StyleSheet.create({
-    container:{
+    container: {
         flexDirection: 'row',
         backgroundColor: 'lightgray',
         justifyContent: 'space-between',
@@ -27,7 +67,7 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         marginTop: 5
     },
-    title:{
+    title: {
         flex: 1,
         marginLeft: 10,
         fontSize: 17,

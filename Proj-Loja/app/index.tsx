@@ -47,6 +47,12 @@ export default function LoginScreen() {
       const errorMessage = error.message
       console.log("Erro: ", errorMessage);
       Alert.alert("Erro!", "Credenciais inválidas, tente novamente")
+      if(error.code === 'auth/invalid-credential'){
+        Alert.alert("Error", "Verifique e-mail e senha digitados")
+      }
+      if(error.code === 'auth/request-network'){
+        Alert.alert("Error", "Verifique sua conexão com a internet")
+      }
     })
   };
 
